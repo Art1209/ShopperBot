@@ -1,14 +1,17 @@
 package ShopperBot;
 
 
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
@@ -16,14 +19,25 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Date;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class HttpExecuter {
 
+    private CookieStore cookieStore = new BasicCookieStore();
     private CloseableHttpClient httpclient = HttpClientBuilder.create()
             .setSSLHostnameVerifier(new NoopHostnameVerifier())
             .setConnectionTimeToLive(70L, TimeUnit.SECONDS)
-            .setMaxConnTotal(100).build();
+            .setMaxConnTotal(100)
+            .setDefaultCookieStore(cookieStore)
+            .build();
+
+    HttpClientContext context = HttpClientContext.create();
+    {
+        context.setCookieStore(cookieStore);
+    }
+
     private CloseableHttpResponse response;
     private static HttpExecuter exc;
     private HttpExecuter(){}
@@ -41,6 +55,7 @@ public class HttpExecuter {
         }
         return false;
     }
+    // todo переделать чтобы искал совпадения из списка слов в сыром html
     public synchronized String[] getButtonsByName(String link, String buttonName){
         Document doc = null;
         String[]result = null;
@@ -59,6 +74,30 @@ public class HttpExecuter {
             e.printStackTrace();
         }
         return result;
+    }
+
+    public long pingCounter(String link){
+        long result = -1;
+        try {
+
+            HttpGet get = new HttpGet(link);
+            long temp = System.currentTimeMillis();
+            response = httpclient.execute(get);
+            long temp2 = System.currentTimeMillis();
+            result = temp2-temp;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public void executeRequest(String link){
+        try {
+            HttpGet get = new HttpGet(link);
+            response = httpclient.execute(get, context);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -84,9 +123,4 @@ public class HttpExecuter {
             e.printStackTrace();
         } return null;
     }
-    public String[] getButtonIds(String link, String buttonName){
-        String[] result = new String[1];
-        return result;
-    }
-
 }

@@ -43,7 +43,7 @@ public class ChatThread implements Runnable{
     private long chat_id;
     private TelegramLongPollingBot bot;
     private Mode mode = Mode.Dead;
-    private ShopTask.ShopTaskBuilder builder;
+    private CustomTask.ShopTaskBuilder builder;
     private TasksKeeper tasksKeeper = TasksKeeper.getTasksKeeper();
     private HttpExecuter httpExecuter = HttpExecuter.getHttpExecuter();
     private BlockingQueue<Update> queue= new ArrayBlockingQueue<Update>(10);
@@ -63,7 +63,7 @@ public class ChatThread implements Runnable{
     }
 
     private void initBuilder() {
-        builder = ShopTask.getBuilder();
+        builder = CustomTask.getBuilder();
     }
 
     public void addUpdate(Update update){
