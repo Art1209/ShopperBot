@@ -17,7 +17,7 @@ public class ChatThread implements Runnable{
 
     public static final String TIME_FORMAT = "dd MM HH mm";
     public static final String TIME_REGEX = "[0-3]?[0-9]\\s{0,3}[0-1]?[0-9]\\s{0,3}[0-2]?[0-9]\\s{0,3}[0-6][0-9]";
-    SimpleDateFormat format = new SimpleDateFormat("yyyy "+TIME_FORMAT);
+    private SimpleDateFormat format = new SimpleDateFormat("yyyy "+TIME_FORMAT);
 
     public static  final String START_COMMAND = "new";
     public static  final String CANCEL_COMMAND = "cancel";
@@ -34,7 +34,6 @@ public class ChatThread implements Runnable{
     public static  final String TASK_SUCCESS = "Your task was successfully added";
     public static  final String TOO_MANY_ENTER_BUTTON_NAME = "too many buttons found please try again";
 
-    public static final String ON_FAIL_MESSAGE = "Неудачная попытка, попробуте еще раз";
     public static final String START_COMMAND_SUCCESS = "New task initialization";
     public static final String CANCEL_COMMAND_SUCCESS = "Task was cancelled, type \"new\" to start new task";
     public static final String[] COMMANDS = {"new", "cancel"};
@@ -46,11 +45,18 @@ public class ChatThread implements Runnable{
     private CustomTask.ShopTaskBuilder builder;
     private TasksKeeper tasksKeeper = TasksKeeper.getTasksKeeper();
     private HttpExecuter httpExecuter = HttpExecuter.getHttpExecuter();
-    private BlockingQueue<Update> queue= new ArrayBlockingQueue<Update>(10);
-    public static ChatThread getChatThread(Update update, TelegramLongPollingBot bot) {
+    private BlockingQueue<Update> queue= new ArrayBlockingQueue<>(10);
+
+
+    static ChatThread getChatThread(Update update, TelegramLongPollingBot bot) {
         ChatThread thr = new ChatThread(update, bot);
         return thr;
     }
+    private ChatThread(Update update, TelegramLongPollingBot bot) {
+        this.bot = bot;
+        this.chat_id = update.getMessage().getChatId();
+    }
+
 
     @Override
     public void run() {
@@ -66,7 +72,7 @@ public class ChatThread implements Runnable{
         builder = CustomTask.getBuilder();
     }
 
-    public void addUpdate(Update update){
+    void addUpdate(Update update){
         queue.add(update);
         exec.execute(this);
     }
@@ -88,21 +94,7 @@ public class ChatThread implements Runnable{
         ((BotFace)bot).sendStringMessage(chat_id, message);
     }
 
-    private ChatThread(Update update, TelegramLongPollingBot bot) {
-//        this.update = update;
-        this.bot = bot;
-        this.chat_id = update.getMessage().getChatId();
-    }
-
-//    public ChatThread setUpdate(Update update) {
-//        this.update = update;
-//        return this;
-//    }
-    public Mode getMode() {
-        return mode;
-    }
-
-    public void setMode(Mode mode) {
+    void setMode(Mode mode) {
         this.mode = mode;
     }
 
@@ -139,7 +131,7 @@ public class ChatThread implements Runnable{
             void doSomeWork(ChatThread thr, String str){
                 if (str.trim().matches(TIME_REGEX)){
                     Date today = new Date(System.currentTimeMillis());
-                    Date target = null;
+                    Date target;
                     try {
                         target = thr.format.parse(Year.now().getValue()+" "+str);
                         if (today.after(target)) target = thr.format.parse((Year.now().getValue()+1)+" "+str);
@@ -180,6 +172,8 @@ public class ChatThread implements Runnable{
                 }
             }
         };
+
+
         void handleCommand(ChatThread thr, String str){
             switch (str){
                 case CANCEL_COMMAND: {

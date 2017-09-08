@@ -1,8 +1,5 @@
 package ShopperBot;
 
-
-import org.apache.http.cookie.Cookie;
-
 import java.io.Serializable;
 import java.util.TimerTask;
 
@@ -15,10 +12,8 @@ public class CustomTask extends TimerTask implements Serializable {
     private long time;
     private String buttonName;
     private transient Shop shop;
-    private transient Cookie cookie;
 
     CustomTask(){}
-
     CustomTask(String link, String buttonName){
         this.buttonName = buttonName;
         this.link = link;
@@ -89,7 +84,7 @@ public class CustomTask extends TimerTask implements Serializable {
 
     @Override
     public boolean equals(Object obj) {
-        return ((CustomTask)obj).getId()==this.getId();
+        return  obj instanceof CustomTask  && ((CustomTask) obj).getId() == this.getId();
     }
 
     @Override
