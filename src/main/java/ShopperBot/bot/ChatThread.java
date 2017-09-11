@@ -1,23 +1,25 @@
-package ShopperBot;
+package ShopperBot.bot;
 
+import ShopperBot.HttpExecuter;
+import ShopperBot.flow.CustomTask;
+import ShopperBot.flow.TasksKeeper;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Year;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class ChatThread implements Runnable{
-    static ExecutorService exec = Executors.newFixedThreadPool(1);
 
     public static final String TIME_FORMAT = "dd MM HH mm";
     public static final String TIME_REGEX = "[0-3]?[0-9]\\s{0,3}[0-1]?[0-9]\\s{0,3}[0-2]?[0-9]\\s{0,3}[0-6][0-9]";
-    private SimpleDateFormat format = new SimpleDateFormat("yyyy "+TIME_FORMAT);
 
     public static  final String START_COMMAND = "new";
     public static  final String CANCEL_COMMAND = "cancel";
@@ -38,14 +40,17 @@ public class ChatThread implements Runnable{
     public static final String CANCEL_COMMAND_SUCCESS = "Task was cancelled, type \"new\" to start new task";
     public static final String[] COMMANDS = {"new", "cancel"};
 
-//    private Update update;
     private long chat_id;
+
+    static ExecutorService exec = Executors.newFixedThreadPool(1);
+
     private TelegramLongPollingBot bot;
     private Mode mode = Mode.Dead;
     private CustomTask.ShopTaskBuilder builder;
     private TasksKeeper tasksKeeper = TasksKeeper.getTasksKeeper();
     private HttpExecuter httpExecuter = HttpExecuter.getHttpExecuter();
     private BlockingQueue<Update> queue= new ArrayBlockingQueue<>(10);
+    private SimpleDateFormat format = new SimpleDateFormat("yyyy "+TIME_FORMAT);
 
 
     static ChatThread getChatThread(Update update, TelegramLongPollingBot bot) {

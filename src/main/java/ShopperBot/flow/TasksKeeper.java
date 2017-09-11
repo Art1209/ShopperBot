@@ -1,12 +1,14 @@
-package ShopperBot;
+package ShopperBot.flow;
 
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Timer;
 
 public class TasksKeeper {
     private Timer timer = new Timer();
     private List<CustomTask> tasks = new ArrayList<>();
-    private HttpExecuter httpExecuter = HttpExecuter.getHttpExecuter();
 
     private static TasksKeeper keeper;
     private TasksKeeper(){
@@ -18,16 +20,13 @@ public class TasksKeeper {
     }
 
     public synchronized void register(CustomTask task){
-        long ping = httpExecuter.pingCounter(task.getLink());
-        long newTime = task.getTime()-ping/2;
-        task.setTime(newTime);
         tasks.add(task);
-        timer.schedule(task,new Date(newTime));
+        timer.schedule(task,new Date(task.getNextLaunchTime()));
         backup();
     }
 
     public synchronized void unregister(CustomTask task){
-        tasks.remove(task.getTime());
+        tasks.remove(task);
     }
 
     private void backup(){
@@ -45,7 +44,7 @@ public class TasksKeeper {
             ObjectInputStream is = new ObjectInputStream(fs);
             tasks = (ArrayList<CustomTask>)is.readObject();
             for (CustomTask task:tasks){
-                timer.schedule(task,task.getTime());
+                timer.schedule(task,task.getNextLaunchTime());
             }
         } catch (IOException e) {
             e.printStackTrace();

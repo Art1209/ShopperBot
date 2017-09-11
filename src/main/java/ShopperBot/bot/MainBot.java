@@ -1,4 +1,4 @@
-package ShopperBot;
+package ShopperBot.bot;
 
 import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.TelegramBotsApi;

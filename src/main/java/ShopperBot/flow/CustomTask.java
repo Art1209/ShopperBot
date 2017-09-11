@@ -1,17 +1,27 @@
-package ShopperBot;
+package ShopperBot.flow;
+
+import ShopperBot.HttpExecuter;
+import com.gargoylesoftware.htmlunit.WebClient;
 
 import java.io.Serializable;
 import java.util.TimerTask;
 
 public class CustomTask extends TimerTask implements Serializable {
+
     private static int counter;
+    private static final long FIRST_START_DELAY= 50000;
+    private static final long EACH_OPERATION_DELAY= 10000;
     private static TasksKeeper tasksKeeper = TasksKeeper.getTasksKeeper();
+    private static HttpExecuter httpExecuter = HttpExecuter.getHttpExecuter();
 
     private int id = ++counter;
     private String link;
     private long time;
+    private long nextLaunchTime;
     private String buttonName;
+    private State state = State.Start;
     private transient Shop shop;
+    private transient WebClient client = new WebClient();
 
     CustomTask(){}
     CustomTask(String link, String buttonName){
@@ -26,11 +36,49 @@ public class CustomTask extends TimerTask implements Serializable {
 
     @Override
     public void run() {
-        initShop();
+        switch (state){
+            case Start: {
+                initShop();
+                shop.login(this);
+                state = State.LoggedIn;
+                setNextLaunchTime(getNextLaunchTime()+EACH_OPERATION_DELAY);
+                tasksKeeper.register(this);
+                break;
+            }
+            case LoggedIn: {
+                shop.doBeforeClick(this);
+                state = State.Ready;
+                long ping = httpExecuter.pingCounter(getLink())/2;
+                setNextLaunchTime(getTime()-ping);
+                tasksKeeper.register(this);
+                break;
+            }
+            case Ready: {
+                shop.click(this);
+                state = State.Clicked;
+                setNextLaunchTime(getNextLaunchTime()+EACH_OPERATION_DELAY);
+                tasksKeeper.register(this);
+                break;
+            }
+            case Clicked: {
+                shop.doAfterClick(this);
+                state = State.ExtraState;
+                setNextLaunchTime(getNextLaunchTime()+EACH_OPERATION_DELAY);
+                tasksKeeper.register(this);
+                break;
+            }
+            case ExtraState: {
+                shop.extraFlow(this);
+                state = State.Done;
+                break;
+            }
+            default:{}
+        }
+
+
         shop.login(this);
-        shop.checkJoinedAccount(this);
         shop.doBeforeClick(this);
-        shop.click(link,this);
+        shop.click(this);
         shop.doAfterClick(this);
         shop.extraFlow(this);
 
@@ -41,10 +89,10 @@ public class CustomTask extends TimerTask implements Serializable {
 
     private void initShop() {
         for (Shop shop:Shop.values()){
-            if (link.contains(shop.host)){
+            if (link.contains(shop.getHost())){
                 this.shop = shop;
                 break;
-            }
+            } else this.shop = Shop.NullShop;
         }
     }
 
@@ -53,12 +101,16 @@ public class CustomTask extends TimerTask implements Serializable {
         this.link = link;
     }
 
-    void setTime(long time) {
+    private void setTime(long time) {
         this.time = time;
     }
 
     void setButtonName(String buttonName) {
         this.buttonName = buttonName;
+    }
+
+    void setNextLaunchTime(long time){
+        this.nextLaunchTime = time;
     }
 
     public String getLink() {
@@ -69,8 +121,12 @@ public class CustomTask extends TimerTask implements Serializable {
         return id;
     }
 
-    public long getTime() {
+    private long getTime() {
         return time;
+    }
+
+    public long getNextLaunchTime() {
+        return nextLaunchTime;
     }
 
     public String getButtonName() {
@@ -93,7 +149,7 @@ public class CustomTask extends TimerTask implements Serializable {
     }
 
 
-    static class ShopTaskBuilder{
+    public static class ShopTaskBuilder{
         private CustomTask task = new CustomTask(null,null);
 
         String builderLink;
@@ -115,6 +171,7 @@ public class CustomTask extends TimerTask implements Serializable {
             return this;
         }
         public ShopTaskBuilder setTime(long time){
+            task.setNextLaunchTime(time-FIRST_START_DELAY);
             builderTime = time;
             task.setTime(time);
             return this;
@@ -125,50 +182,7 @@ public class CustomTask extends TimerTask implements Serializable {
         }
     }
 
-
-    private enum Shop{
-        Bang(""){
-            @Override
-            boolean login(CustomTask task) {
-                return false;
-            }
-
-            @Override
-            boolean checkJoinedAccount(CustomTask task) {
-                return false;
-            }
-
-            @Override
-            boolean doBeforeClick(CustomTask task) {
-                return false;
-            }
-
-            @Override
-            boolean click(String link, CustomTask task) {
-                return false;
-            }
-
-            @Override
-            boolean doAfterClick(CustomTask task) {
-                return false;
-            }
-
-            @Override
-            boolean extraFlow(CustomTask task) {
-                return false;
-            }
-        };
-        Shop(String host){
-            this.host = host;
-        }
-        abstract boolean  login(CustomTask task);
-        abstract boolean checkJoinedAccount(CustomTask task);
-        abstract boolean doBeforeClick(CustomTask task);
-        abstract boolean click(String link, CustomTask task);
-        abstract boolean doAfterClick(CustomTask task);
-        abstract boolean extraFlow(CustomTask task);
-
-        private String host;
-        private String loginLink;
+    enum State implements Serializable{
+        Start, LoggedIn, Ready, Clicked, ExtraState, Done;
     }
 }

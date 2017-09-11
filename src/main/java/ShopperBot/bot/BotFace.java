@@ -1,4 +1,4 @@
-package ShopperBot;
+package ShopperBot.bot;
 
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Message;
@@ -14,7 +14,7 @@ public class BotFace extends TelegramLongPollingBot {
     public static final String TOKEN ="402286704:AAGYjEK4OOZynmmyc9fRXxaQNbuwmAQA22U";
 
 
-    private Map<Long,ChatThread> chatThreads = new HashMap<>();
+    private Map<Long, ChatThread> chatThreads = new HashMap<>();
 
     public void onUpdateReceived(Update update) {
         if (update.hasMessage()){

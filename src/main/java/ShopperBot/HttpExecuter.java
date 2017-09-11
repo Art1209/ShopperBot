@@ -6,7 +6,6 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -19,11 +18,13 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Date;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class HttpExecuter {
+
+
+    public static final String USER_AGENT =
+            "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36";
 
     private CookieStore cookieStore = new BasicCookieStore();
     private CloseableHttpClient httpclient = HttpClientBuilder.create()
@@ -38,9 +39,11 @@ public class HttpExecuter {
         context.setCookieStore(cookieStore);
     }
 
+    static String phantomJsPath;
     private CloseableHttpResponse response;
     private static HttpExecuter exc;
-    private HttpExecuter(){}
+    private HttpExecuter(){
+    }
     public static HttpExecuter getHttpExecuter(){
         if (exc ==null)exc = new HttpExecuter();
         return exc;
@@ -114,8 +117,7 @@ public class HttpExecuter {
     public InputStream getStreamForFileUrl(String url){
         try {
             HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-            connection.setRequestProperty("User-Agent",
-                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.65 Safari/537.31");
+            connection.setRequestProperty("User-Agent",USER_AGENT);
             return connection.getInputStream();
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -123,4 +125,14 @@ public class HttpExecuter {
             e.printStackTrace();
         } return null;
     }
+
+//    public static void main(String[] args) throws IOException {
+//        WebClient client = new WebClient();
+//        HtmlPage page1 = client.getPage("http://ya.ru");
+//        HtmlTextInput input = (HtmlTextInput)page1.getElementsByTagName("input").get(1);
+//        input.setText("sequence");
+//        HtmlButton button = (HtmlButton) page1.getElementsByTagName("button").get(0);
+//        HtmlPage page2 = button.click();
+//        System.out.println(page2.getUrl());
+//    }
 }
